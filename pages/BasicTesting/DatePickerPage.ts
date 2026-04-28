@@ -85,26 +85,26 @@ export class DatePickerPage {
         this.page = page;
 
         // Single Date Picker
-        this.singleDateButton = page.locator('#single-date');
-        this.submitDateButton = page.locator('[data-testid="date-submit-button"]');
+        this.singleDateButton = page.getByRole('button', { name: /single date/i });
+        this.submitDateButton = page.getByTestId('date-submit-button');
 
         // Date Range Picker
-        this.dateRangeButton = page.locator('#date-range');
-        this.submitDateRangeButton = page.locator('[data-testid="date-range-submit-button"]');
+        this.dateRangeButton = page.getByRole('button', { name: /date range/i });
+        this.submitDateRangeButton = page.getByTestId('date-range-submit-button');
 
         // Date and Time Picker
-        this.dateTimeButton = page.locator('#date-time');
+        this.dateTimeButton = page.getByRole('button', { name: /date and time/i });
         this.timeInput = page.locator('#time');
-        this.submitDateTimeButton = page.locator('[data-testid="date-time-submit-button"]');
+        this.submitDateTimeButton = page.getByTestId('date-time-submit-button');
 
         // Calendar Navigation
-        this.prevMonthButton = page.locator('button[aria-label*="previous month"], button[name="previous-month"]').first();
-        this.nextMonthButton = page.locator('button[aria-label*="next month"], button[name="next-month"]').first();
-        this.calendarGrid = page.locator('[role="grid"]').first();
-        this.calendarPopover = page.locator('[role="dialog"], [data-radix-popper-content-wrapper]').first();
+        this.prevMonthButton = page.getByRole('button', { name: /previous month/i }).first();
+        this.nextMonthButton = page.getByRole('button', { name: /next month/i }).first();
+        this.calendarGrid = page.getByRole('grid').first();
+        this.calendarPopover = page.getByRole('dialog').first();
 
         // Navigation
-        this.datePickerNav = page.locator('a[href="/date-picker"]');
+        this.datePickerNav = page.getByRole('link', { name: /date picker/i });
 
         // Toast notification - uses li[role="status"] in this app
         this.toastNotification = page.locator('li[role="status"], [data-sonner-toast]').first();
@@ -157,9 +157,7 @@ export class DatePickerPage {
      * @param day - Day number to select (1-31)
      */
     async selectDay(day: number): Promise<void> {
-        // Day buttons have role="gridcell" directly on the button element
-        // Use exact text match to avoid matching "15" when looking for "1"
-        const dayButton = this.page.locator(`button[role="gridcell"]:not([disabled])`).filter({ hasText: new RegExp(`^${day}$`) }).first();
+        const dayButton = this.page.getByRole('gridcell', { name: new RegExp(`^${day}$`) }).first();
         await dayButton.click();
     }
 
@@ -186,10 +184,8 @@ export class DatePickerPage {
      * Navigate to previous month in the calendar
      */
     async goToPreviousMonth(): Promise<void> {
-        // Use fresh locator to avoid stale element reference
-        const prevBtn = this.page.locator('button[aria-label*="previous month"], button[name="previous-month"]').first();
-        await prevBtn.waitFor({ state: 'visible', timeout: 5000 });
-        await prevBtn.click();
+        await this.prevMonthButton.waitFor({ state: 'visible', timeout: 5000 });
+        await this.prevMonthButton.click();
         await this.page.waitForTimeout(500);
     }
 
@@ -197,10 +193,8 @@ export class DatePickerPage {
      * Navigate to next month in the calendar
      */
     async goToNextMonth(): Promise<void> {
-        // Use fresh locator to avoid stale element reference
-        const nextBtn = this.page.locator('button[aria-label*="next month"], button[name="next-month"]').first();
-        await nextBtn.waitFor({ state: 'visible', timeout: 5000 });
-        await nextBtn.click();
+        await this.nextMonthButton.waitFor({ state: 'visible', timeout: 5000 });
+        await this.nextMonthButton.click();
         await this.page.waitForTimeout(500);
     }
 
@@ -379,7 +373,7 @@ export class DatePickerPage {
      * @returns True if the day is disabled
      */
     async isDayDisabled(day: number): Promise<boolean> {
-        const dayButton = this.page.locator(`button[role="gridcell"]`).filter({ hasText: new RegExp(`^${day}$`) }).first();
+        const dayButton = this.page.getByRole('gridcell', { name: new RegExp(`^${day}$`) }).first();
         const isDisabled = await dayButton.isDisabled();
         const ariaDisabled = await dayButton.getAttribute('aria-disabled');
         const hasDisabledClass = await dayButton.evaluate(el =>
@@ -399,7 +393,7 @@ export class DatePickerPage {
         const beforeDate = await this.getSelectedSingleDate();
 
         try {
-            const dayButton = this.page.locator(`button[role="gridcell"]`).filter({ hasText: new RegExp(`^${day}$`) }).first();
+            const dayButton = this.page.getByRole('gridcell', { name: new RegExp(`^${day}$`) }).first();
             await dayButton.click({ timeout: 1000 });
         } catch {
             return true; // Click was blocked
