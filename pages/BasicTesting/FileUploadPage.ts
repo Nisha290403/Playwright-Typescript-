@@ -147,7 +147,8 @@ export class FileUploadPage {
      * @param filePath - Path to the file to upload
      */
     async uploadSingleFile(filePath: string): Promise<void> {
-        await this.singleFileInput.setInputFiles(filePath);
+        const safeFilePath = this.getSafeTestFilePath(filePath);
+        await this.singleFileInput.setInputFiles(safeFilePath);
         await this.page.waitForTimeout(500);
     }
 
@@ -216,7 +217,8 @@ export class FileUploadPage {
      * @param filePaths - Array of file paths to upload
      */
     async uploadMultipleFiles(filePaths: string[]): Promise<void> {
-        await this.multipleFilesInput.setInputFiles(filePaths);
+        const safeFilePaths = filePaths.map(filePath => this.getSafeTestFilePath(filePath));
+        await this.multipleFilesInput.setInputFiles(safeFilePaths);
         await this.page.waitForTimeout(500);
     }
 
@@ -276,12 +278,14 @@ export class FileUploadPage {
      * @param filePaths - Array of file paths to drag and drop
      */
     async dragAndDropFiles(filePaths: string[]): Promise<void> {
+        const safeFilePaths = filePaths.map(filePath => this.getSafeTestFilePath(filePath));
+
         // Find the hidden file input within the drop zone if it exists
         const dropZoneInput = this.dragDropArea.locator('input[type="file"]');
         const inputExists = await dropZoneInput.count() > 0;
 
         if (inputExists) {
-            await dropZoneInput.setInputFiles(filePaths);
+            await dropZoneInput.setInputFiles(safeFilePaths);
         } else {
             // Simulate drag and drop using dataTransfer
             const dataTransfer = await this.page.evaluateHandle(async (paths) => {
@@ -294,7 +298,7 @@ export class FileUploadPage {
                     dt.items.add(file);
                 }
                 return dt;
-            }, filePaths);
+            }, safeFilePaths);
 
             await this.dragDropArea.dispatchEvent('drop', { dataTransfer });
         }
@@ -368,8 +372,18 @@ export class FileUploadPage {
      * @returns Path to the created file
      */
     getTestFilePath(fileName: string): string {
-        // Return path relative to test-data directory
-        return path.join(process.cwd(), 'test-data', fileName);
+        return this.getSafeTestFilePath(fileName);
+    }
+
+    private getSafeTestFilePath(fileName: string): string {
+        const testDataDir = path.resolve(process.cwd(), 'test-data');
+        const resolvedPath = path.resolve(testDataDir, path.basename(fileName));
+
+        if (!resolvedPath.startsWith(testDataDir + path.sep) && resolvedPath !== testDataDir) {
+            throw new Error('Invalid test file path');
+        }
+
+        return resolvedPath;
     }
 
     /**
